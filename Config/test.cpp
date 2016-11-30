@@ -8,8 +8,8 @@ using namespace std;
 using namespace inifile;
 
 int g_reset = 0;
-char g_host[512] = "172.17.0.36:2181";
-char g_filepath[512] = "/Conf/test.ini";
+char g_host[512] = {0};
+char g_filepath[512] = {0};
 /**********unitl*********************/  
 void print_usage()
 {
@@ -27,10 +27,11 @@ void print_usage()
  
 void get_option(int argc,const char* argv[])
 {
-	extern char    *optarg;
+	//extern char    *optarg;
+    //extern int optind, opterr, optopt;
 	int            optch;
 	int            dem = 1;
-	const char    optstring[] = "hrps:";
+	const char    optstring[] = "hp:s:r";
     
     
 	while((optch = getopt(argc , (char * const *)argv , optstring)) != -1 )
@@ -49,13 +50,16 @@ void get_option(int argc,const char* argv[])
 			printf("need parameter: %c\n", optopt);
 			exit(-1);
         case 'r':
-                g_reset = 1;
+            g_reset = 1;
+            printf("data:%s\n", optarg);
             break;
         case 's':
             strncpy(g_host,optarg,sizeof(g_host));
+            printf("host:%s\n", optarg);
             break;
         case 'p':
             strncpy(g_filepath,optarg,sizeof(g_filepath));
+            printf("path:%s\n", optarg);
             break;
 		default:
 			break;
@@ -82,16 +86,16 @@ int setdata(const char *host,const char * filepath,const char *data)
     }  
     int ret = zoo_exists(zkhandle,filepath,0,NULL);
     if(ret != ZOK){
-        ret = zoo_create(zkhandle,filepath,data,strlen(data),NULL,0,path_buffer,bufferlen);
+        ret = zoo_create(zkhandle,filepath,data,strlen(data),&ZOO_OPEN_ACL_UNSAFE,0,path_buffer,bufferlen);
         if(ret != ZOK){
-            fprintf(stderr, "Error when create path :%s\n",filepath);  
+            fprintf(stderr, "Error when create path:%s, ret:%d\n",filepath, ret);  
             exit(EXIT_FAILURE);  
         }
     }
 
     ret = zoo_set(zkhandle,filepath,data,strlen(data),-1);
     if(ret != ZOK){
-        fprintf(stderr,"failed to set the data of path %s!\n",filepath);
+        fprintf(stderr,"failed to set the data of path:%s, ret:%d\n",filepath, ret);
     }
     
     zookeeper_close(zkhandle); 
