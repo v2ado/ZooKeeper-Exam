@@ -87,7 +87,7 @@ int push(zhandle_t *zkhandle,const char *path,char *element)
     if(ret != ZOK){
         fprintf(stderr,"failed to create the path %s!\n",path);
     }else{
-        printf("create path %s successfully!\n",path);
+        printf("push item:%s successfully!\n",path_buffer);
     }
 
     return ret;
@@ -109,7 +109,7 @@ int pop(zhandle_t *zkhandle,const char *path,char *element,int *len)
     }else{
         char *min = children.data[0];
         for(i = 0; i < children.count; ++i){
-            printf("%s:%s\n",min,children.data[i]);
+            printf("item:%s\n",children.data[i]);
             if(strcmp(min,children.data[i]) > 0){
                 min = children.data[i];
             }

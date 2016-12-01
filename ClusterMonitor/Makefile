@@ -1,8 +1,8 @@
 CC=gcc
-HOME=/home/chenxueyou
+HOME=/usr/local
 CFLAGS=-g 
-ZOOKEEPER_INC=-I${HOME}/zookeeper/include/zookeeper
-ZOOKEEPER_LIB= -L${HOME}/zookeeper/lib -lzookeeper_mt
+ZOOKEEPER_INC=-I${HOME}/include/zookeeper
+ZOOKEEPER_LIB= -L${HOME}/lib -lzookeeper_mt
 
 APP=monitor
 all:

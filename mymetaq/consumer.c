@@ -9,6 +9,7 @@ char g_host[512]= "172.17.0.36:2181";
 char g_topic[512]= "MyTopic";
 char g_my_path[512]={0};
 int  g_groupid = 0;
+int  zkget_watcher_g = 0;
 enum MODE{MASTER_MODE,SLAVE_MODE} g_mode;
 
 void print_usage();
@@ -70,10 +71,10 @@ void convert_str_to_vector(char *str,char * delim,struct String_vector *vector)
 {
     int i = 0;
 
-    char *result = strsep( str,delim);
+    char *result = strsep( &str,delim);
     while( result != NULL ) {
         ++i;
-        result = strsep( str,delim );
+        result = strsep( &str,delim );
     }
 
     if(i > 0){
@@ -84,16 +85,17 @@ void convert_str_to_vector(char *str,char * delim,struct String_vector *vector)
         vector->data = NULL;
     } 
 
-    char *result = strsep( str,delim);
+    result = strsep( &str,delim);
     i = 0;
     while( result != NULL ) {
-        vector.data[i++] = strdup(result);
-        result = strsep( str,delim );
+        vector->data[i++] = strdup(result);
+        result = strsep( &str,delim );
     }
 
 }
 void do_work(zhandle_t *zkhandle)
 {
+    char msg_path[512] = {0};
     char group_path[512]={0};
     char breaker_topic_path[512]={0};
 
@@ -106,7 +108,7 @@ void do_work(zhandle_t *zkhandle)
         //todo
         char str_partitions[512]={0};
         int  len = sizeof(str_partitions);
-        int ret = zoo_get(zkhandle,g_my_path,zkget_watcher_g,"",str_partitions,&len,NULL);
+        int ret = zoo_get(zkhandle,g_my_path,zkget_watcher_g,str_partitions,&len,NULL);
 
         if(ret != ZOK){
             fprintf(stderr,"failed to get data of the path %s.\n",g_my_path);
@@ -117,13 +119,15 @@ void do_work(zhandle_t *zkhandle)
             int i = 0;
             for(i = 0; i < partitions.count; ++i){
                 sprintf(msg_path,"/Breaker/%s/Partition-%s",g_topic,partitions.data[i]);
-                
+                printf("get:%s\n", msg_path); 
             }
         }
         
     }
 
 } 
+
+void choose_mater(zhandle_t *zkhandle,const char *group_path,const char *self_name);
 void zkbalance_watcher_g(zhandle_t* zh, int type, int state, const char* path, void* watcherCtx)  
 {  
 /*  
@@ -141,7 +145,7 @@ void zkbalance_watcher_g(zhandle_t* zh, int type, int state, const char* path, v
     
     char *p_self_name = rindex(g_my_path,'/')+1;
 
-    choose_mater(zkhandle,group_path,p_self_name);
+    choose_mater(zh,group_path,p_self_name);
 
     if(g_mode == MASTER_MODE){
         set_balancing_strategy(zh,group_path,breaker_topic_path);
@@ -149,7 +153,6 @@ void zkbalance_watcher_g(zhandle_t* zh, int type, int state, const char* path, v
     
     }
 }  
-
 void choose_mater(zhandle_t *zkhandle,const char *group_path,const char *self_name)
 {
     struct String_vector procs;
@@ -183,6 +186,7 @@ void choose_mater(zhandle_t *zkhandle,const char *group_path,const char *self_na
     }
 
 }
+
 int set_balancing_strategy(zhandle_t *zkhandle,char *group_path,char *breaker_topic_path)
 {   
     if(g_mode != MASTER_MODE){
